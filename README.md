@@ -23,7 +23,7 @@ Se abre con doble clic en cualquier navegador moderno.
 
 La aplicación está publicada con GitHub Pages:
 
-**https://TU-USUARIO.github.io/pensum-tracker-pucmm/**
+**https://yeuriscdev.github.io/PensumTracker/**
 
 Funciona igual en el celular. En iOS puedes usar *Compartir → Añadir a pantalla de
 inicio* para abrirla como si fuera una app.
@@ -35,9 +35,11 @@ inicio* para abrirla como si fuera una app.
 ### Publicar tu propia copia
 
 1. Haz *fork* del repositorio (o clónalo y súbelo al tuyo).
-2. Ve a **Settings → Pages**.
-3. En *Source* elige **Deploy from a branch**, rama `main`, carpeta `/ (root)`.
-4. Guarda. En un minuto la URL queda activa.
+2. El repositorio debe ser **público**: GitHub Pages en repos privados requiere
+   una cuenta de pago.
+3. Ve a **Settings → Pages**.
+4. En *Source* elige **Deploy from a branch**, la rama `master`, carpeta `/ (root)`.
+5. Guarda. En un minuto la URL queda activa.
 
 ## Uso
 
