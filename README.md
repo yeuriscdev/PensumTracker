@@ -19,9 +19,29 @@ Se abre con doble clic en cualquier navegador moderno.
 - **Buscador** y filtro para ocultar laboratorios.
 - **Guardado automático** en el navegador, con exportación e importación de respaldo en JSON.
 
+## Ver en línea
+
+La aplicación está publicada con GitHub Pages:
+
+**https://TU-USUARIO.github.io/pensum-tracker-pucmm/**
+
+Funciona igual en el celular. En iOS puedes usar *Compartir → Añadir a pantalla de
+inicio* para abrirla como si fuera una app.
+
+> El progreso se guarda en el navegador que uses. La versión en línea y la copia
+> local llevan progresos separados: para pasar de una a otra, usa **Exportar
+> respaldo** e **Importar**.
+
+### Publicar tu propia copia
+
+1. Haz *fork* del repositorio (o clónalo y súbelo al tuyo).
+2. Ve a **Settings → Pages**.
+3. En *Source* elige **Deploy from a branch**, rama `main`, carpeta `/ (root)`.
+4. Guarda. En un minuto la URL queda activa.
+
 ## Uso
 
-1. Abre `pensum_tracker.html` en el navegador.
+1. Abre `index.html` en el navegador (o entra a la URL de arriba).
 2. Haz clic en una asignatura para fijarla en el Inspector.
 3. Cambia su estado y asígnale la calificación obtenida.
 4. El índice, los créditos y los desbloqueos se recalculan al instante.
@@ -60,7 +80,7 @@ Si tu facultad usa otra escala, edita la constante `ESCALA` en el archivo.
 
 ## Estructura
 
-Todo vive en `pensum_tracker.html`:
+Todo vive en `index.html`:
 
 - `PENSUM` — arreglo con los doce períodos y sus asignaturas.
 - `ESCALA` — tabla de equivalencia de calificaciones.

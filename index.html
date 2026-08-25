@@ -2,7 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#03070d">
+<meta name="description" content="Seguimiento del pénsum de Ingeniería Mecánica de la PUCMM: 85 asignaturas, 217 créditos, prerrequisitos, índice acumulado y planificador de períodos.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Pensum Tracker — Ing. Mecánica PUCMM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -263,6 +267,36 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);let
 ::-webkit-scrollbar-thumb:hover{background:rgba(63,224,255,.5)}
 .note{position:relative;z-index:2;padding:0 24px 26px;font-family:var(--mono);font-size:9.5px;
   letter-spacing:.12em;color:var(--steel-dim);text-transform:uppercase;line-height:1.8}
+
+/* ---------- móvil ---------- */
+@media (max-width:760px){
+  .hud{padding:11px 14px;gap:13px}
+  .mark h1{font-size:15px;letter-spacing:.1em}
+  .mark .sub{font-size:9px}
+  .reactor{width:30px;height:30px}
+  .hud-stat{padding-left:12px}
+  .hud-stat .v{font-size:15px}
+  .hud-stat .k{font-size:8px}
+  .toolbar{padding:10px 14px 0;gap:7px}
+  .search{width:100%;order:-1}
+  .toolbar .hud-spacer{display:none}
+  .toolbar .hint{width:100%;order:99}
+  .wrap{padding:12px 14px 30px;gap:14px}
+  .panel{padding:15px 13px}
+  .cuat{width:184px}
+  .card .nom{font-size:12px}
+  .gauge{width:108px;height:108px}
+  .gauge .val b{font-size:24px}
+  .plan-list{max-height:none}
+  .modal{padding:12px}
+  .pre-grid{grid-template-columns:1fr}
+  .note{padding:0 14px 22px}
+  .scan{display:none}
+}
+@media (max-width:420px){
+  .hud-stat:nth-of-type(6){display:none}
+  .cuat{width:168px}
+}
 </style>
 </head>
 <body>
