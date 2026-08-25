@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pensum Tracker — Ing. Mecánica PUCMM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#03070d; --panel:rgba(18,42,64,.34); --panel-2:rgba(8,20,32,.55);
+  --line:rgba(66,182,232,.20); --line-soft:rgba(66,182,232,.10);
+  --cyan:#3fe0ff; --cyan-hot:#8ff2ff; --cyan-dim:#1d6f8a;
+  --blue:#5a95ff; --amber:#ffb347; --red:#ff8f7a;
+  --steel:#8aa4bd; --steel-dim:#4d6579; --text:#dcecf8;
+  --font:'Chakra Petch',"Segoe UI",system-ui,sans-serif;
+  --mono:'Share Tech Mono',ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);letter-spacing:.02em;
+  overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ---------- ambiente ---------- */
+.bg-field{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bg-field::before{content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(1100px 700px at 18% -10%, rgba(28,110,160,.30), transparent 62%),
+    radial-gradient(900px 620px at 92% 8%, rgba(40,80,190,.16), transparent 60%),
+    radial-gradient(1000px 800px at 50% 120%, rgba(20,90,130,.18), transparent 65%),
+    linear-gradient(180deg,#03070d 0%,#050e17 55%,#03070d 100%)}
+.bg-field::after{content:'';position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(rgba(66,182,232,.055) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(66,182,232,.055) 1px,transparent 1px);
+  background-size:52px 52px;
+  mask-image:radial-gradient(circle at 50% 30%,#000 10%,transparent 78%);
+  -webkit-mask-image:radial-gradient(circle at 50% 30%,#000 10%,transparent 78%)}
+.scan{position:fixed;left:0;right:0;height:180px;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(63,224,255,.045),transparent);
+  animation:sweep 9s linear infinite}
+@keyframes sweep{0%{top:-190px}100%{top:100%}}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+  box-shadow:inset 0 0 240px rgba(0,0,0,.85),inset 0 0 60px rgba(0,20,40,.6)}
+
+/* ---------- paneles ---------- */
+.panel{position:relative;background:linear-gradient(155deg,var(--panel) 0%,var(--panel-2) 100%);
+  border:1px solid var(--line);backdrop-filter:blur(14px) saturate(120%);
+  -webkit-backdrop-filter:blur(14px) saturate(120%);
+  box-shadow:inset 0 1px 0 rgba(143,242,255,.12),inset 0 0 60px rgba(20,110,160,.09),
+             0 0 26px rgba(0,120,190,.10),0 18px 40px rgba(0,0,0,.45);
+  padding:18px 20px}
+.panel::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;opacity:.55;
+  background:linear-gradient(90deg,transparent,rgba(143,242,255,.85),transparent)}
+.br{position:absolute;width:13px;height:13px;pointer-events:none;opacity:.85;
+  filter:drop-shadow(0 0 5px rgba(63,224,255,.9))}
+.br.tl{top:-1px;left:-1px;border-top:1px solid var(--cyan);border-left:1px solid var(--cyan)}
+.br.tr{top:-1px;right:-1px;border-top:1px solid var(--cyan);border-right:1px solid var(--cyan)}
+.br.bl{bottom:-1px;left:-1px;border-bottom:1px solid var(--cyan);border-left:1px solid var(--cyan)}
+.br.rb{bottom:-1px;right:-1px;border-bottom:1px solid var(--cyan);border-right:1px solid var(--cyan)}
+.panel-title{font-size:11px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--cyan);margin:0 0 14px;display:flex;align-items:center;gap:10px;
+  text-shadow:0 0 12px rgba(63,224,255,.5)}
+.panel-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+
+/* ---------- HUD ---------- */
+.hud{position:relative;z-index:3;display:flex;align-items:center;gap:22px;flex-wrap:wrap;
+  padding:14px 24px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(9,26,42,.72),rgba(4,10,18,.35));
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.mark{display:flex;align-items:center;gap:13px;min-width:0}
+.reactor{width:36px;height:36px;border-radius:50%;flex:none;position:relative;
+  border:1px solid rgba(63,224,255,.5);
+  background:radial-gradient(circle,rgba(143,242,255,.9) 0%,rgba(63,224,255,.35) 32%,transparent 62%);
+  animation:pulse 3.4s ease-in-out infinite}
+.reactor::after{content:'';position:absolute;inset:6px;border-radius:50%;
+  border:1px solid rgba(143,242,255,.55);border-right-color:transparent;border-bottom-color:transparent;
+  animation:spin 6s linear infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 18px rgba(63,224,255,.42),inset 0 0 12px rgba(63,224,255,.42)}
+  50%{box-shadow:0 0 32px rgba(63,224,255,.75),inset 0 0 20px rgba(63,224,255,.7)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mark h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:#eaf7ff;text-shadow:0 0 16px rgba(63,224,255,.35);white-space:nowrap}
+.mark .sub{font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--steel-dim);
+  text-transform:uppercase;margin-top:2px}
+.hud-spacer{flex:1}
+.hud-stat{display:flex;flex-direction:column;gap:3px;padding-left:20px;border-left:1px solid var(--line-soft)}
+.hud-stat .k{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--steel-dim);text-transform:uppercase}
+.hud-stat .v{font-family:var(--mono);font-size:18px;color:var(--cyan);line-height:1;
+  text-shadow:0 0 14px rgba(63,224,255,.45)}
+.hud-stat .v small{font-size:10.5px;color:var(--steel-dim);text-shadow:none}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);
+  animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.status{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.18em;color:var(--steel);text-transform:uppercase}
+
+/* ---------- controles ---------- */
+.btn{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--steel);background:rgba(20,46,68,.35);border:1px solid var(--line);
+  padding:7px 11px;cursor:pointer;transition:.18s;white-space:nowrap}
+.btn:hover{color:var(--cyan);border-color:rgba(63,224,255,.55);box-shadow:0 0 16px rgba(63,224,255,.2)}
+.btn.on{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 16px rgba(63,224,255,.28)}
+.btn.danger:hover{color:var(--red);border-color:rgba(255,143,122,.6);box-shadow:0 0 16px rgba(255,143,122,.2)}
+.search{font-family:var(--mono);font-size:11px;color:var(--text);background:rgba(6,16,26,.6);
+  border:1px solid var(--line);padding:7px 11px;width:190px;outline:none;letter-spacing:.08em}
+.search:focus{border-color:var(--cyan);box-shadow:0 0 16px rgba(63,224,255,.22)}
+.search::placeholder{color:var(--steel-dim)}
+.toolbar{position:relative;z-index:2;display:flex;gap:9px;align-items:center;flex-wrap:wrap;
+  padding:12px 24px 0}
+
+/* ---------- layout ---------- */
+.wrap{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) 336px;gap:18px;
+  padding:14px 24px 40px;align-items:start}
+@media (max-width:1150px){.wrap{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- malla ---------- */
+.malla-panel::after{content:'';position:absolute;right:1px;top:44px;bottom:1px;width:72px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(4,10,18,.86))}
+.malla-scroll{overflow-x:auto;padding:0 4px 10px}
+.malla{display:flex;gap:13px;min-width:min-content;align-items:flex-start}
+.cuat{width:216px;flex:none;display:flex;flex-direction:column;gap:8px}
+.cuat-head{display:flex;align-items:baseline;justify-content:space-between;padding:7px 10px;
+  border:1px solid var(--line-soft);
+  background:linear-gradient(180deg,rgba(30,70,100,.30),rgba(8,20,32,.18))}
+.cuat-head .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--cyan);text-transform:uppercase}
+.cuat-head .cr{font-family:var(--mono);font-size:9.5px;color:var(--steel-dim)}
+
+.card{position:relative;padding:9px 10px 8px;cursor:pointer;border:1px solid var(--line-soft);
+  background:linear-gradient(150deg,rgba(20,46,68,.28),rgba(6,16,26,.45));
+  transition:transform .18s ease,box-shadow .22s ease,border-color .22s ease,opacity .22s ease}
+.card:hover{transform:translateY(-2px);border-color:rgba(63,224,255,.45);box-shadow:0 0 22px rgba(63,224,255,.16)}
+.card .bar{position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--steel-dim)}
+.card .top{display:flex;justify-content:space-between;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--steel-dim)}
+.card .nom{font-size:12.5px;font-weight:500;line-height:1.26;margin-top:4px;color:var(--text)}
+.card .foot{margin-top:7px;display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--steel-dim);text-transform:uppercase}
+.grade{font-family:var(--mono);font-size:10px;padding:1px 5px;border:1px solid currentColor;line-height:1.3}
+.lab{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;padding:1px 4px;
+  border:1px solid rgba(120,150,175,.3);color:var(--steel-dim)}
+
+.card.aprobada{border-color:rgba(63,224,255,.42);
+  background:linear-gradient(150deg,rgba(26,86,116,.42),rgba(8,26,40,.5));
+  box-shadow:0 0 16px rgba(63,224,255,.12),inset 0 0 26px rgba(63,224,255,.07)}
+.card.aprobada .bar{background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+.card.aprobada .top,.card.aprobada .grade{color:var(--cyan)}
+.card.cursando{border-color:rgba(255,179,71,.5);
+  background:linear-gradient(150deg,rgba(96,62,16,.34),rgba(20,14,6,.5));animation:live 2.6s ease-in-out infinite}
+.card.cursando .bar{background:var(--amber);box-shadow:0 0 12px var(--amber)}
+.card.cursando .top{color:var(--amber)}
+@keyframes live{0%,100%{box-shadow:0 0 14px rgba(255,179,71,.12),inset 0 0 22px rgba(255,179,71,.05)}
+  50%{box-shadow:0 0 30px rgba(255,179,71,.28),inset 0 0 30px rgba(255,179,71,.12)}}
+.card.disponible{border-color:rgba(90,149,255,.34);
+  background:linear-gradient(150deg,rgba(22,44,86,.30),rgba(6,14,26,.48))}
+.card.disponible .bar{background:var(--blue);box-shadow:0 0 10px rgba(90,149,255,.7)}
+.card.disponible .top{color:#93b6ff}
+.card.bloqueada{opacity:.36;border-style:dashed;border-color:rgba(120,150,175,.22);
+  background:rgba(8,16,26,.35)}
+.card.bloqueada .bar{background:var(--steel-dim);box-shadow:none}
+.card.bloqueada:hover{transform:none;box-shadow:none}
+.card.is-prereq{border-color:var(--cyan-hot)!important;box-shadow:0 0 26px rgba(143,242,255,.5)!important;opacity:1}
+.card.is-unlocks{border-color:rgba(90,149,255,.9)!important;box-shadow:0 0 22px rgba(90,149,255,.45)!important;opacity:1}
+.card.dimmed{opacity:.16}
+.card.hit{border-color:var(--cyan-hot)!important;box-shadow:0 0 26px rgba(143,242,255,.45)!important;opacity:1}
+.card.sel{outline:1px solid var(--cyan);outline-offset:2px}
+.card.planned::after{content:'';position:absolute;top:6px;right:6px;width:6px;height:6px;
+  background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+
+/* ---------- lateral ---------- */
+.side{display:flex;flex-direction:column;gap:18px}
+.gauge-wrap{display:flex;align-items:center;gap:16px}
+.gauge{position:relative;width:126px;height:126px;flex:none}
+.gauge svg{transform:rotate(-90deg);display:block;filter:drop-shadow(0 0 10px rgba(63,224,255,.55))}
+.gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .val b{font-family:var(--mono);font-size:29px;color:#eaf7ff;line-height:1;
+  text-shadow:0 0 20px rgba(63,224,255,.7)}
+.gauge .val span{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;color:var(--steel-dim);
+  text-transform:uppercase;margin-top:5px}
+.mini{display:flex;flex-direction:column;gap:10px;flex:1}
+.mini .row{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);
+  font-size:10px;letter-spacing:.1em;color:var(--steel-dim);text-transform:uppercase}
+.mini .row b{font-size:15px;color:var(--text);font-weight:400}
+.meter{height:6px;background:rgba(120,160,190,.10);border:1px solid var(--line-soft);position:relative;overflow:hidden}
+.meter i{position:absolute;left:0;top:0;bottom:0;display:block;
+  background:linear-gradient(90deg,var(--cyan-dim),var(--cyan));box-shadow:0 0 14px rgba(63,224,255,.6)}
+.meter-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.14em;color:var(--steel-dim);text-transform:uppercase;margin-bottom:6px}
+.meter-label b{color:var(--cyan);font-weight:400}
+.legend{display:flex;flex-direction:column;gap:8px}
+.legend div{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.1em;color:var(--steel);text-transform:uppercase}
+.chip{width:20px;height:9px;flex:none;border:1px solid}
+.chip.a{border-color:var(--cyan);background:rgba(63,224,255,.28);box-shadow:0 0 10px rgba(63,224,255,.45)}
+.chip.c{border-color:var(--amber);background:rgba(255,179,71,.28);box-shadow:0 0 10px rgba(255,179,71,.45)}
+.chip.d{border-color:rgba(90,149,255,.7);background:rgba(90,149,255,.18)}
+.chip.b{border-color:rgba(120,150,175,.4);border-style:dashed}
+.plan-list{display:flex;flex-direction:column;gap:6px;max-height:236px;overflow-y:auto;padding-right:4px}
+.plan-item{display:flex;align-items:center;gap:9px;padding:7px 9px;border:1px solid var(--line-soft);
+  background:rgba(14,32,50,.3);cursor:pointer;transition:.18s}
+.plan-item:hover{border-color:rgba(63,224,255,.4);background:rgba(20,52,78,.4)}
+.plan-item.on{border-color:var(--cyan);background:rgba(26,86,116,.4);box-shadow:0 0 14px rgba(63,224,255,.16)}
+.tick{width:13px;height:13px;flex:none;border:1px solid var(--steel-dim);position:relative}
+.plan-item.on .tick{border-color:var(--cyan);box-shadow:0 0 10px rgba(63,224,255,.6)}
+.plan-item.on .tick::after{content:'';position:absolute;inset:2px;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.plan-item .t{flex:1;min-width:0;font-size:11.5px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-item .c{font-family:var(--mono);font-size:9.5px;color:var(--steel-dim)}
+.plan-total{margin-top:12px;padding-top:11px;border-top:1px solid var(--line-soft);display:flex;
+  justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:10px;
+  letter-spacing:.14em;color:var(--steel-dim);text-transform:uppercase}
+.plan-total b{font-size:17px;color:var(--cyan);font-weight:400;text-shadow:0 0 12px rgba(63,224,255,.5)}
+.hint{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--steel-dim);
+  line-height:1.75;text-transform:uppercase}
+
+/* ---------- inspector ---------- */
+.inspect{min-height:92px}
+.inspect h3{margin:0 0 3px;font-size:15.5px;font-weight:600;color:#eaf7ff;line-height:1.25}
+.inspect .meta{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--cyan);
+  text-transform:uppercase;margin-bottom:10px}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:3px 6px;border:1px solid var(--line);
+  color:var(--steel);background:rgba(20,46,68,.3)}
+.tag.ok{color:var(--cyan);border-color:rgba(63,224,255,.45)}
+.tag.no{color:var(--red);border-color:rgba(255,143,122,.4)}
+.lbl{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--steel-dim);
+  text-transform:uppercase;margin:12px 0 6px}
+.grades{display:flex;flex-wrap:wrap;gap:5px}
+.gbtn{font-family:var(--mono);font-size:10px;padding:4px 8px;border:1px solid var(--line);
+  color:var(--steel);background:rgba(20,46,68,.3);cursor:pointer;transition:.15s}
+.gbtn:hover{color:var(--cyan);border-color:rgba(63,224,255,.5)}
+.gbtn.on{color:#03070d;background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 14px rgba(63,224,255,.5)}
+.states{display:flex;gap:5px;margin-top:4px}
+.states .btn{flex:1;text-align:center;padding:6px 4px;font-size:9px}
+
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
+  background:rgba(2,6,12,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:24px}
+.modal.open{display:flex}
+.modal .panel{width:min(720px,100%);max-height:82vh;display:flex;flex-direction:column}
+.modal-body{overflow-y:auto;margin-top:4px}
+.pre-group{margin-bottom:14px}
+.pre-group .gh{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;color:var(--cyan);
+  text-transform:uppercase;margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--line-soft)}
+.pre-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:5px}
+.pre-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line-soft);
+  background:rgba(14,32,50,.25);cursor:pointer;font-size:11.5px;line-height:1.2;transition:.15s}
+.pre-item:hover{border-color:rgba(63,224,255,.4)}
+.pre-item.on{border-color:var(--cyan);background:rgba(26,86,116,.4);box-shadow:0 0 12px rgba(63,224,255,.15)}
+.pre-item.on .tick{border-color:var(--cyan);box-shadow:0 0 10px rgba(63,224,255,.6)}
+.pre-item.on .tick::after{content:'';position:absolute;inset:2px;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.modal-foot{display:flex;gap:9px;justify-content:flex-end;margin-top:14px;padding-top:13px;
+  border-top:1px solid var(--line-soft)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:30;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--cyan);background:rgba(8,26,42,.94);border:1px solid rgba(63,224,255,.5);
+  padding:11px 20px;box-shadow:0 0 26px rgba(63,224,255,.3);opacity:0;pointer-events:none;transition:.3s}
+.toast.show{opacity:1}
+.boot{opacity:0;transform:translateY(10px);animation:boot .6s ease forwards}
+@keyframes boot{to{opacity:1;transform:none}}
+::-webkit-scrollbar{height:9px;width:9px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+::-webkit-scrollbar-thumb{background:rgba(63,224,255,.28);border:1px solid rgba(63,224,255,.2)}
+::-webkit-scrollbar-thumb:hover{background:rgba(63,224,255,.5)}
+.note{position:relative;z-index:2;padding:0 24px 26px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.12em;color:var(--steel-dim);text-transform:uppercase;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="bg-field"></div><div class="scan"></div><div class="vignette"></div>
+
+<header class="hud">
+  <div class="mark">
+    <div class="reactor"></div>
+    <div><h1>Pensum Tracker</h1><div class="sub">Ing. Mecánica · PUCMM</div></div>
+  </div>
+  <div class="hud-spacer"></div>
+  <div class="hud-stat"><span class="k">Índice acum.</span><span class="v" id="hudGpa">—</span></div>
+  <div class="hud-stat"><span class="k">Créditos</span><span class="v" id="hudCr">—</span></div>
+  <div class="hud-stat"><span class="k">Avance</span><span class="v" id="hudPct">—</span></div>
+  <div class="hud-stat"><span class="k">Restante</span><span class="v" id="hudFalta">—</span></div>
+  <div class="hud-stat"><span class="status"><span class="dot"></span><span id="clock"></span></span></div>
+</header>
+
+<div class="toolbar">
+  <input class="search" id="search" placeholder="Buscar asignatura…" autocomplete="off">
+  <button class="btn" id="btnLabs">Ocultar laboratorios</button>
+  <div class="hud-spacer"></div>
+  <span class="hint" id="saveState"></span>
+  <button class="btn" id="btnExport">Exportar respaldo</button>
+  <button class="btn" id="btnImport">Importar</button>
+  <button class="btn danger" id="btnReset">Reiniciar</button>
+  <input type="file" id="fileIn" accept="application/json" style="display:none">
+</div>
+
+<div class="wrap">
+  <section class="panel malla-panel boot" style="animation-delay:.05s">
+    <h2 class="panel-title">Malla curricular <span style="font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--steel-dim)">desplaza →</span></h2>
+    <div class="malla-scroll"><div class="malla" id="malla"></div></div>
+  </section>
+
+  <aside class="side">
+    <section class="panel boot" style="animation-delay:.15s">
+      <h2 class="panel-title">Rendimiento</h2>
+      <div class="gauge-wrap">
+        <div class="gauge">
+          <svg width="126" height="126" viewBox="0 0 126 126">
+            <circle cx="63" cy="63" r="52" fill="none" stroke="rgba(120,160,190,.13)" stroke-width="7"/>
+            <circle id="gaugeArc" cx="63" cy="63" r="52" fill="none" stroke="#3fe0ff" stroke-width="7"
+                    stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+          </svg>
+          <div class="val"><b id="gpaVal">0.00</b><span>Índice</span></div>
+        </div>
+        <div class="mini">
+          <div class="row"><span>Aprobadas</span><b id="nAprob">0</b></div>
+          <div class="row"><span>Cursando</span><b id="nCurs">0</b></div>
+          <div class="row"><span>Disponibles</span><b id="nDisp">0</b></div>
+          <div class="row"><span>Bloqueadas</span><b id="nBloq">0</b></div>
+        </div>
+      </div>
+      <div style="margin-top:18px">
+        <div class="meter-label"><span>Créditos aprobados</span><b id="crTxt">0 / 0</b></div>
+        <div class="meter"><i id="crBar" style="width:0%"></i></div>
+      </div>
+      <div style="margin-top:13px">
+        <div class="meter-label"><span>Períodos completados</span><b id="pdTxt">0 / 12</b></div>
+        <div class="meter"><i id="pdBar" style="width:0%"></i></div>
+      </div>
+    </section>
+
+    <section class="panel boot inspect" id="inspect" style="animation-delay:.25s"></section>
+
+    <section class="panel boot" style="animation-delay:.35s">
+      <h2 class="panel-title">Próximo período</h2>
+      <div class="plan-list" id="planList"></div>
+      <div class="plan-total"><span>Créditos seleccionados</span><b id="planCr">0</b></div>
+    </section>
+
+    <section class="panel boot" style="animation-delay:.45s">
+      <h2 class="panel-title">Leyenda</h2>
+      <div class="legend">
+        <div><span class="chip a"></span>Aprobada</div>
+        <div><span class="chip c"></span>Cursando</div>
+        <div><span class="chip d"></span>Disponible</div>
+        <div><span class="chip b"></span>Bloqueada por prerrequisito</div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<div class="modal" id="modal">
+  <div class="panel">
+    <h2 class="panel-title" id="modalTitle">Prerrequisitos</h2>
+    <div class="hint" style="margin-bottom:12px">Marca las asignaturas que deben aprobarse antes. Los cambios se guardan en tu respaldo.</div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn" id="preClear">Quitar todos</button>
+      <button class="btn on" id="preClose">Listo</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="note" id="footNote"></div>
+<script>
+/* =====================================================================
+   PENSUM ING. MECÁNICA — PUCMM
+   Transcrito del PDF oficial "Pénsum · Plan de estudios: Ingeniería Mecánica"
+   t = horas teóricas | p = horas prácticas | cr = créditos
+   pre = prerrequisitos (INFERIDOS — editables desde el Inspector)
+   ===================================================================== */
+const PENSUM = [
+{a:1,p:1,ms:[
+ {id:'DEP', n:'Electiva de Deporte', t:0,p:2,cr:1, pre:[]},
+ {id:'FIL', n:'Electiva de Filosofía', t:4,p:0,cr:4, pre:[]},
+ {id:'HSM', n:'Electiva Historia y Sociedad Mundial', t:3,p:0,cr:3, pre:[]},
+ {id:'ESP1',n:'Español I', t:4,p:0,cr:4, pre:[]},
+ {id:'RLM', n:'Razonamiento Lógico-Matemático', t:4,p:0,cr:4, pre:[]},
+ {id:'PRE', n:'Precálculo', t:3,p:2,cr:4, pre:[]}]},
+{a:1,p:2,ms:[
+ {id:'ART', n:'Electiva de Arte', t:1,p:2,cr:2, pre:[]},
+ {id:'TEO1',n:'Electiva I Estudios Teológicos', t:2,p:0,cr:2, pre:[]},
+ {id:'ALGP',n:'Algoritmos y Programación', t:3,p:3,cr:4, pre:[]},
+ {id:'DDT1',n:'Diseño y Dibujo Técnico I', t:0,p:6,cr:2, pre:[]},
+ {id:'ESP2',n:'Español II', t:4,p:0,cr:4, pre:['ESP1']},
+ {id:'CDIF',n:'Cálculo Diferencial', t:4,p:0,cr:4, pre:['PRE']}]},
+{a:1,p:3,ms:[
+ {id:'CYH', n:'Electiva de Ciencia y Humanismo', t:2,p:0,cr:2, pre:[]},
+ {id:'MNEW',n:'Mecánica Newtoniana', t:4,p:0,cr:4, pre:['CDIF']},
+ {id:'LMNEW',n:'Laboratorio de Mecánica Newtoniana', t:0,p:2,cr:0, pre:['CDIF'], lab:'MNEW'},
+ {id:'DDT2',n:'Diseño y Dibujo Técnico II', t:0,p:6,cr:2, pre:['DDT1']},
+ {id:'LIT', n:'Electiva de Literatura', t:4,p:0,cr:4, pre:['ESP2']},
+ {id:'CINT',n:'Cálculo Integral', t:4,p:0,cr:4, pre:['CDIF']},
+ {id:'QGEN',n:'Química General', t:3,p:0,cr:3, pre:[]},
+ {id:'LQGEN',n:'Lab. de QMA-103 (Química General)', t:0,p:3,cr:1, pre:[], lab:'QGEN'}]},
+{a:2,p:1,ms:[
+ {id:'EYM', n:'Electricidad y Magnetismo', t:4,p:0,cr:4, pre:['MNEW','CINT']},
+ {id:'LEYM',n:'Laboratorio de Electricidad y Magnetismo', t:0,p:2,cr:0, pre:['MNEW'], lab:'EYM'},
+ {id:'ING1',n:'Inglés I', t:4,p:0,cr:4, pre:[]},
+ {id:'FAB1',n:'Fabricación Mecánica I', t:2,p:0,cr:2, pre:[]},
+ {id:'LFAB1',n:'Laboratorio de Fabricación Mecánica I', t:0,p:6,cr:2, pre:[], lab:'FAB1'},
+ {id:'ALIN',n:'Álgebra Lineal', t:2,p:2,cr:3, pre:['RLM']},
+ {id:'CVEC',n:'Cálculo Vectorial', t:4,p:0,cr:4, pre:['CINT']}]},
+{a:2,p:2,ms:[
+ {id:'CE1', n:'Circuitos Eléctricos I', t:2,p:2,cr:3, pre:['EYM']},
+ {id:'LCE1',n:'Laboratorio de Circuitos Eléctricos I', t:0,p:3,cr:1, pre:['EYM'], lab:'CE1'},
+ {id:'ING2',n:'Inglés II', t:4,p:0,cr:4, pre:['ING1']},
+ {id:'FAB2',n:'Fabricación Mecánica II', t:3,p:0,cr:3, pre:['FAB1']},
+ {id:'LFAB2',n:'Laboratorio de Fabricación Mecánica II', t:0,p:6,cr:2, pre:['LFAB1'], lab:'FAB2'},
+ {id:'CMAT',n:'Ciencias de Materiales', t:2,p:0,cr:2, pre:['QGEN']},
+ {id:'LCMAT',n:'Laboratorio de Ciencias Materiales', t:0,p:3,cr:1, pre:['QGEN'], lab:'CMAT'},
+ {id:'EDIF',n:'Ecuaciones Diferenciales', t:4,p:0,cr:4, pre:['CINT']}]},
+{a:2,p:3,ms:[
+ {id:'CAMB',n:'Electiva de Ciencia Ambiental', t:3,p:0,cr:3, pre:[]},
+ {id:'LCAMB',n:'Laboratorio de Electiva de Ciencia Ambiental', t:0,p:2,cr:1, pre:[], lab:'CAMB'},
+ {id:'HSD', n:'Electiva de Historia y Sociedad Dominicana', t:3,p:0,cr:3, pre:[]},
+ {id:'CE2', n:'Circuitos Eléctricos II', t:4,p:0,cr:4, pre:['CE1']},
+ {id:'LCE2',n:'Laboratorio de Circuitos Eléctricos II', t:0,p:3,cr:1, pre:['LCE1'], lab:'CE2'},
+ {id:'ING3',n:'Inglés III', t:4,p:0,cr:4, pre:['ING2']},
+ {id:'EST', n:'Estática', t:2,p:2,cr:3, pre:['MNEW','CVEC']}]},
+{a:3,p:1,ms:[
+ {id:'TEO2',n:'Electiva II Estudios Teológicos', t:2,p:0,cr:2, pre:['TEO1']},
+ {id:'OFT', n:'Ondas, Fluidos y Termodinámica', t:4,p:0,cr:4, pre:['MNEW','CINT']},
+ {id:'LOFT',n:'Laboratorio de Ondas, Fluidos y Termodinámica', t:0,p:2,cr:0, pre:['MNEW'], lab:'OFT'},
+ {id:'PROB',n:'Probabilidad y Estadística para Ingeniería', t:3,p:2,cr:4, pre:['CINT']},
+ {id:'INGI',n:'Inglés para las Ingenierías', t:4,p:0,cr:4, pre:['ING3']},
+ {id:'MM1', n:'Mecánica de Materiales I', t:3,p:0,cr:3, pre:['EST']},
+ {id:'LMM1',n:'Laboratorio de Mecánica de Materiales I', t:0,p:3,cr:1, pre:['EST'], lab:'MM1'}]},
+{a:3,p:2,ms:[
+ {id:'ELE1',n:'Electrónica I', t:3,p:0,cr:3, pre:['CE2']},
+ {id:'LELE1',n:'Laboratorio de Electrónica I', t:0,p:3,cr:1, pre:['LCE2'], lab:'ELE1'},
+ {id:'ASL', n:'Análisis de Sistemas Lineales', t:2,p:2,cr:3, pre:['EDIF','ALIN']},
+ {id:'PINT',n:'Proyecto Integrador IME', t:2,p:2,cr:3, pre:['MM1','DDT2']},
+ {id:'TSF', n:'Taller de Soldadura y Fundición Industrial', t:0,p:3,cr:1, pre:['FAB2']},
+ {id:'TER1',n:'Termodinámica I', t:3,p:0,cr:3, pre:['OFT']},
+ {id:'LTER1',n:'Laboratorio de Termodinámica I', t:0,p:3,cr:1, pre:['OFT'], lab:'TER1'},
+ {id:'MM2', n:'Mecánica de Materiales II', t:3,p:0,cr:3, pre:['MM1']},
+ {id:'TMM2',n:'Taller de Mecánica de Materiales II', t:0,p:3,cr:1, pre:['LMM1'], lab:'MM2'},
+ {id:'MAVI',n:'Matemáticas Avanzada para Ingenieros', t:2,p:2,cr:3, pre:['EDIF','CVEC']}]},
+{a:3,p:3,ms:[
+ {id:'INS', n:'Instrumentación Industrial', t:3,p:0,cr:3, pre:['ELE1']},
+ {id:'LINS',n:'Laboratorio de Instrumentación Industrial', t:0,p:3,cr:1, pre:['LELE1'], lab:'INS'},
+ {id:'CEM', n:'Controles Electromecánicos', t:3,p:0,cr:3, pre:['ELE1','ASL']},
+ {id:'LCEM',n:'Laboratorio de Controles Electromecánicos', t:0,p:3,cr:1, pre:['LELE1'], lab:'CEM'},
+ {id:'MF1', n:'Mecánica de Fluidos I', t:3,p:0,cr:3, pre:['OFT']},
+ {id:'LMF1',n:'Laboratorio de Mecánica de Fluidos I', t:0,p:3,cr:1, pre:['OFT'], lab:'MF1'},
+ {id:'DVM', n:'Dinámica y Vibraciones Mecánicas', t:2,p:2,cr:3, pre:['EST','EDIF']}]},
+{a:4,p:1,ms:[
+ {id:'MEF', n:'Métodos de Elementos Finitos', t:2,p:2,cr:3, pre:['MM2','MAVI']},
+ {id:'LMEF',n:'Laboratorio de Métodos de Elementos Finitos', t:0,p:3,cr:1, pre:['MM2'], lab:'MEF'},
+ {id:'IECO',n:'Ingeniería Económica', t:3,p:0,cr:3, pre:['PROB']},
+ {id:'TER2',n:'Termodinámica II', t:3,p:0,cr:3, pre:['TER1']},
+ {id:'LTER2',n:'Laboratorio de Termodinámica II', t:0,p:3,cr:1, pre:['LTER1'], lab:'TER2'},
+ {id:'MF2', n:'Mecánica de Fluidos II', t:2,p:2,cr:3, pre:['MF1']},
+ {id:'DM1', n:'Diseño de Máquinas I', t:3,p:0,cr:3, pre:['MM2']},
+ {id:'EGP', n:'Elaboración y Gestión de Proyectos', t:0,p:3,cr:1, pre:['PINT']}]},
+{a:4,p:2,ms:[
+ {id:'TCAL',n:'Transferencia de Calor', t:2,p:2,cr:3, pre:['TER2','MF2']},
+ {id:'CLIM',n:'Sistema de Climatización y Refrigeración', t:2,p:2,cr:3, pre:['TER2']},
+ {id:'LCLIM',n:'Laboratorio de Sistema de Climatización y Refrigeración', t:0,p:3,cr:1, pre:['TER2'], lab:'CLIM'},
+ {id:'DM2', n:'Diseños de Máquinas II', t:2,p:2,cr:3, pre:['DM1']},
+ {id:'MANT',n:'Mantenimiento Industrial', t:3,p:0,cr:3, pre:['DM1']},
+ {id:'APRO',n:'Anteproyecto de Grado IME', t:0,p:3,cr:1, pre:['EGP']},
+ {id:'ELI', n:'Electiva I', t:3,p:0,cr:3, pre:[]}]},
+{a:4,p:3,ms:[
+ {id:'ETI', n:'Ética de las Profesiones ARQ/ING', t:3,p:0,cr:3, pre:[]},
+ {id:'SST', n:'Seguridad y Salud en el Trabajo', t:2,p:2,cr:3, pre:[]},
+ {id:'PGRA',n:'Proyecto de Grado IME', t:0,p:6,cr:2, pre:['APRO']},
+ {id:'ELII',n:'Electiva II', t:3,p:0,cr:3, pre:[]}]}
+];
+
+/* escala PUCMM (0–4). Editable aquí si tu facultad usa otra. */
+const ESCALA = {'A':4.0,'B+':3.5,'B':3.0,'C+':2.5,'C':2.0,'D':1.0,'F':0.0};
+const ORDEN_NOTAS = ['A','B+','B','C+','C','D','F'];
+const STORE_KEY = 'pensum_tracker_ime_pucmm_v1';
+
+/* ===================== estado ===================== */
+const MATERIAS = [];
+PENSUM.forEach((b,i)=>b.ms.forEach(m=>MATERIAS.push(Object.assign({},m,{a:b.a,pnum:b.p,per:i+1,preDef:m.pre.slice()}))));
+const M = Object.fromEntries(MATERIAS.map(m=>[m.id,m]));
+const CR_TOTAL = MATERIAS.reduce((s,m)=>s+m.cr,0);
+
+let estado = {};                 // id -> {e:'pendiente|cursando|aprobada', nota:'A'|null}
+let prereqs = {};                // id -> [ids]  (sobrescribe los inferidos)
+let plan = new Set();
+let sel = null, verLabs = true, filtro = '';
+let almacenaOK = true;
+
+MATERIAS.forEach(m=>{ estado[m.id]={e:'pendiente',nota:null}; prereqs[m.id]=m.preDef.slice(); });
+
+/* ===================== persistencia ===================== */
+function guardar(){
+  const data = {v:1, estado, prereqs, plan:[...plan]};
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); almacenaOK=true; }
+  catch(e){ almacenaOK=false; }
+  pintarEstadoGuardado();
+}
+function cargar(){
+  let raw=null;
+  try{ raw = localStorage.getItem(STORE_KEY); }catch(e){ almacenaOK=false; }
+  if(!raw){ pintarEstadoGuardado(); return; }
+  try{ aplicar(JSON.parse(raw)); }catch(e){}
+  pintarEstadoGuardado();
+}
+function aplicar(d){
+  if(d.estado) for(const k in d.estado) if(M[k]) estado[k]=d.estado[k];
+  if(d.prereqs) for(const k in d.prereqs) if(M[k]) prereqs[k]=d.prereqs[k].filter(x=>M[x]);
+  if(d.plan) plan = new Set(d.plan.filter(x=>M[x]));
+}
+function pintarEstadoGuardado(){
+  const el = document.getElementById('saveState');
+  el.textContent = almacenaOK ? 'Progreso guardado en este navegador' : 'Sin guardado — usa Exportar respaldo';
+  el.style.color = almacenaOK ? 'var(--steel-dim)' : 'var(--amber)';
+}
+
+/* ===================== lógica ===================== */
+const pre = id => prereqs[id] || [];
+const aprob = id => estado[id].e==='aprobada';
+const disponible = m => estado[m.id].e==='pendiente' && pre(m.id).every(aprob);
+function clase(m){
+  const e = estado[m.id].e;
+  if(e==='aprobada') return 'aprobada';
+  if(e==='cursando') return 'cursando';
+  return disponible(m) ? 'disponible' : 'bloqueada';
+}
+const habilita = id => MATERIAS.filter(x=>pre(x.id).includes(id)).map(x=>x.id);
+const visible = m => (verLabs || !m.lab) &&
+  (!filtro || m.n.toLowerCase().includes(filtro) || m.id.toLowerCase().includes(filtro));
+
+/* ===================== malla ===================== */
+function render(){
+  const cont = document.getElementById('malla');
+  cont.innerHTML='';
+  PENSUM.forEach((b,i)=>{
+    const ms = MATERIAS.filter(m=>m.per===i+1 && visible(m));
+    if(!ms.length && (filtro || !verLabs)) return;
+    const col = document.createElement('div'); col.className='cuat';
+    const crP = MATERIAS.filter(m=>m.per===i+1).reduce((s,m)=>s+m.cr,0);
+    const apP = MATERIAS.filter(m=>m.per===i+1 && aprob(m.id)).reduce((s,m)=>s+m.cr,0);
+    col.innerHTML = `<div class="cuat-head"><span class="n">Año ${b.a} · P${b.p}</span>
+      <span class="cr">${apP}/${crP} cr</span></div>`;
+    ms.forEach(m=>{
+      const k = clase(m), st = estado[m.id];
+      const el = document.createElement('div');
+      el.className = 'card '+k + (plan.has(m.id)?' planned':'') + (sel===m.id?' sel':'')
+                   + (filtro && (m.n.toLowerCase().includes(filtro))?' hit':'');
+      el.dataset.id = m.id;
+      el.innerHTML = `<span class="bar"></span>
+        <div class="top"><span>T${m.t} P${m.p} · ${m.cr} CR</span>
+          ${st.nota?`<span class="grade">${st.nota}</span>`:(m.lab?'<span class="lab">LAB</span>':'')}</div>
+        <div class="nom">${m.n}</div>
+        <div class="foot"><span>${k}</span><span>${pre(m.id).length?pre(m.id).length+' req':'libre'}</span></div>`;
+      el.addEventListener('mouseenter',()=>trazar(m));
+      el.addEventListener('mouseleave',()=>{limpiar(); if(sel) inspector(M[sel]); else vacio();});
+      el.addEventListener('click',()=>{ sel=m.id; render(); inspector(m); });
+      col.appendChild(el);
+    });
+    cont.appendChild(col);
+  });
+  brackets();
+}
+function trazar(m){
+  const ps = new Set(pre(m.id)), us = new Set(habilita(m.id));
+  document.querySelectorAll('.card').forEach(el=>{
+    const c = el.dataset.id; if(c===m.id) return;
+    if(ps.has(c)) el.classList.add('is-prereq');
+    else if(us.has(c)) el.classList.add('is-unlocks');
+    else el.classList.add('dimmed');
+  });
+  inspector(m);
+}
+function limpiar(){
+  document.querySelectorAll('.card').forEach(el=>el.classList.remove('is-prereq','is-unlocks','dimmed'));
+}
+
+/* ===================== inspector ===================== */
+function vacio(){
+  document.getElementById('inspect').innerHTML =
+    `<h2 class="panel-title">Inspector</h2>
+     <div class="hint">Pasa el cursor sobre una asignatura para trazar sus dependencias.<br>
+     Haz clic para fijarla y cambiar estado o nota.</div>`;
+  brackets();
+}
+function inspector(m){
+  const st = estado[m.id], k = clase(m);
+  const ps = pre(m.id).length
+    ? pre(m.id).map(p=>`<span class="tag ${aprob(p)?'ok':'no'}">${M[p].n}</span>`).join('')
+    : '<span class="tag">Sin prerrequisitos</span>';
+  const us = habilita(m.id);
+  const usT = us.length ? us.map(u=>`<span class="tag">${M[u].n}</span>`).join('')
+                        : '<span class="tag">No habilita otras</span>';
+  const notas = m.cr>0 ? `<div class="lbl">Calificación</div>
+      <div class="grades">${ORDEN_NOTAS.map(g=>`<button class="gbtn ${st.nota===g?'on':''}" data-g="${g}">${g}</button>`).join('')}
+      <button class="gbtn ${!st.nota?'on':''}" data-g="">—</button></div>`
+    : `<div class="lbl">Calificación</div><div class="hint">Asignatura de 0 créditos: no entra en el índice.</div>`;
+
+  document.getElementById('inspect').innerHTML =
+    `<h2 class="panel-title">Inspector</h2>
+     <h3>${m.n}</h3>
+     <div class="meta">Año ${m.a} · Período ${m.pnum} · T${m.t} P${m.p} · ${m.cr} créditos · ${k}</div>
+     <div class="lbl">Estado</div>
+     <div class="states">
+       <button class="btn ${st.e==='pendiente'?'on':''}" data-e="pendiente">Pendiente</button>
+       <button class="btn ${st.e==='cursando'?'on':''}" data-e="cursando">Cursando</button>
+       <button class="btn ${st.e==='aprobada'?'on':''}" data-e="aprobada">Aprobada</button>
+     </div>
+     ${notas}
+     <div class="lbl">Requiere <button class="btn" id="editPre" style="padding:2px 7px;font-size:8.5px;margin-left:6px">Editar</button></div>
+     <div class="tags">${ps}</div>
+     <div class="lbl">Habilita</div><div class="tags">${usT}</div>`;
+
+  document.querySelectorAll('#inspect .states .btn').forEach(b=>
+    b.addEventListener('click',()=>{
+      st.e = b.dataset.e;
+      if(st.e!=='aprobada') st.nota=null;
+      else if(!st.nota) st.nota='A';
+      if(st.e!=='pendiente') plan.delete(m.id);
+      refrescar(); inspector(m);
+    }));
+  document.querySelectorAll('#inspect .gbtn').forEach(b=>
+    b.addEventListener('click',()=>{
+      st.nota = b.dataset.g || null;
+      if(st.nota) st.e='aprobada';
+      refrescar(); inspector(m);
+    }));
+  const ep = document.getElementById('editPre');
+  if(ep) ep.addEventListener('click',()=>abrirPre(m));
+  brackets();
+}
+
+/* ===================== editor de prerrequisitos ===================== */
+let preEdit = null;
+function abrirPre(m){
+  preEdit = m;
+  document.getElementById('modalTitle').textContent = 'Prerrequisitos · '+m.n;
+  const body = document.getElementById('modalBody');
+  body.innerHTML='';
+  PENSUM.forEach((b,i)=>{
+    if(i+1 > m.per) return;
+    const ms = MATERIAS.filter(x=>x.per===i+1 && x.id!==m.id);
+    if(!ms.length) return;
+    const g = document.createElement('div'); g.className='pre-group';
+    g.innerHTML = `<div class="gh">Año ${b.a} · Período ${b.p}</div>`;
+    const grid = document.createElement('div'); grid.className='pre-grid';
+    ms.forEach(x=>{
+      const it = document.createElement('div');
+      it.className = 'pre-item'+(pre(m.id).includes(x.id)?' on':'');
+      it.innerHTML = `<span class="tick"></span><span>${x.n}</span>`;
+      it.addEventListener('click',()=>{
+        const arr = prereqs[m.id];
+        const j = arr.indexOf(x.id);
+        if(j>=0) arr.splice(j,1); else arr.push(x.id);
+        it.classList.toggle('on');
+        refrescar(); inspector(m);
+      });
+      grid.appendChild(it);
+    });
+    g.appendChild(grid); body.appendChild(g);
+  });
+  document.getElementById('modal').classList.add('open');
+  brackets();
+}
+document.getElementById('preClose').addEventListener('click',()=>{
+  document.getElementById('modal').classList.remove('open');
+});
+document.getElementById('preClear').addEventListener('click',()=>{
+  if(!preEdit) return;
+  prereqs[preEdit.id] = [];
+  document.querySelectorAll('#modalBody .pre-item').forEach(e=>e.classList.remove('on'));
+  refrescar(); inspector(preEdit);
+});
+document.getElementById('modal').addEventListener('click',e=>{
+  if(e.target.id==='modal') e.currentTarget.classList.remove('open');
+});
+
+/* ===================== métricas ===================== */
+function refrescar(){
+  render();
+  const ap = MATERIAS.filter(m=>aprob(m.id));
+  const crAp = ap.reduce((s,m)=>s+m.cr,0);
+  const conNota = ap.filter(m=>m.cr>0 && estado[m.id].nota);
+  const crNota = conNota.reduce((s,m)=>s+m.cr,0);
+  const pts = conNota.reduce((s,m)=>s+ESCALA[estado[m.id].nota]*m.cr,0);
+  const gpa = crNota ? pts/crNota : 0;
+  const pct = crAp/CR_TOTAL;
+
+  document.getElementById('gpaVal').textContent = gpa.toFixed(2);
+  document.getElementById('hudGpa').innerHTML = gpa.toFixed(2)+' <small>/4.00</small>';
+  document.getElementById('hudCr').innerHTML  = crAp+' <small>/'+CR_TOTAL+'</small>';
+  document.getElementById('hudPct').innerHTML = Math.round(pct*100)+'<small>%</small>';
+  document.getElementById('hudFalta').innerHTML = (CR_TOTAL-crAp)+' <small>cr</small>';
+  document.getElementById('crTxt').textContent = crAp+' / '+CR_TOTAL;
+  document.getElementById('crBar').style.width = (pct*100).toFixed(1)+'%';
+  document.getElementById('gaugeArc').style.strokeDashoffset = (2*Math.PI*52*(1-gpa/4)).toFixed(1);
+
+  const perCompl = PENSUM.filter((b,i)=>MATERIAS.filter(m=>m.per===i+1).every(m=>aprob(m.id))).length;
+  document.getElementById('pdTxt').textContent = perCompl+' / 12';
+  document.getElementById('pdBar').style.width = (perCompl/12*100).toFixed(1)+'%';
+
+  document.getElementById('nAprob').textContent = ap.length;
+  document.getElementById('nCurs').textContent  = MATERIAS.filter(m=>estado[m.id].e==='cursando').length;
+  document.getElementById('nDisp').textContent  = MATERIAS.filter(disponible).length;
+  document.getElementById('nBloq').textContent  = MATERIAS.filter(m=>clase(m)==='bloqueada').length;
+
+  renderPlan(); guardar();
+}
+
+/* ===================== planificador ===================== */
+function renderPlan(){
+  const lista = document.getElementById('planList');
+  const disp = MATERIAS.filter(disponible).sort((a,b)=>a.per-b.per || b.cr-a.cr);
+  lista.innerHTML = disp.length ? '' :
+    '<div class="hint">No hay asignaturas disponibles. Aprueba prerrequisitos para desbloquear.</div>';
+  disp.forEach(m=>{
+    const el = document.createElement('div');
+    el.className = 'plan-item'+(plan.has(m.id)?' on':'');
+    el.innerHTML = `<span class="tick"></span><span class="t" title="${m.n}">${m.n}</span><span class="c">${m.cr}cr</span>`;
+    el.addEventListener('click',()=>{ plan.has(m.id)?plan.delete(m.id):plan.add(m.id); renderPlan(); render(); guardar(); });
+    lista.appendChild(el);
+  });
+  const tot = [...plan].filter(id=>M[id] && disponible(M[id])).reduce((s,id)=>s+M[id].cr,0);
+  const out = document.getElementById('planCr');
+  out.textContent = tot;
+  out.style.color = tot>22 ? 'var(--amber)' : 'var(--cyan)';
+}
+
+/* ===================== utilidades UI ===================== */
+function brackets(){
+  document.querySelectorAll('.panel').forEach(p=>{
+    if(p.querySelector('.br')) return;
+    ['tl','tr','bl','rb'].forEach(k=>{const s=document.createElement('span');s.className='br '+k;p.appendChild(s);});
+  });
+}
+let tRef;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(tRef); tRef = setTimeout(()=>t.classList.remove('show'),2600);
+}
+document.getElementById('search').addEventListener('input',e=>{ filtro = e.target.value.trim().toLowerCase(); render(); });
+document.getElementById('btnLabs').addEventListener('click',e=>{
+  verLabs = !verLabs; e.target.textContent = verLabs?'Ocultar laboratorios':'Mostrar laboratorios';
+  e.target.classList.toggle('on',!verLabs); render();
+});
+document.getElementById('btnExport').addEventListener('click',()=>{
+  const blob = new Blob([JSON.stringify({v:1,fecha:new Date().toISOString(),estado,prereqs,plan:[...plan]},null,2)],
+                        {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pensum_respaldo_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Respaldo descargado');
+});
+document.getElementById('btnImport').addEventListener('click',()=>document.getElementById('fileIn').click());
+document.getElementById('fileIn').addEventListener('change',e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ try{ aplicar(JSON.parse(r.result)); sel=null; refrescar(); vacio(); toast('Respaldo restaurado'); }
+                   catch(err){ toast('Archivo no válido'); } };
+  r.readAsText(f); e.target.value='';
+});
+document.getElementById('btnReset').addEventListener('click',()=>{
+  MATERIAS.forEach(m=>{ estado[m.id]={e:'pendiente',nota:null}; prereqs[m.id]=m.preDef.slice(); });
+  plan.clear(); sel=null; refrescar(); vacio(); toast('Todo reiniciado');
+});
+function reloj(){
+  const d = new Date();
+  document.getElementById('clock').textContent =
+    d.toLocaleDateString('es-DO',{day:'2-digit',month:'short'}).toUpperCase().replace('.','')+' · '+
+    d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
+setInterval(reloj,1000); reloj();
+
+document.getElementById('footNote').innerHTML =
+  '// '+MATERIAS.length+' asignaturas · '+CR_TOTAL+' créditos · 4 años × 3 períodos — transcrito del pénsum oficial PUCMM<br>'+
+  '// los prerrequisitos son una propuesta lógica, no aparecen en el PDF: verifícalos y ajústalos con «editar» en el inspector';
+
+cargar(); refrescar(); vacio();
+</script>
+</body>
+</html>
